@@ -72,7 +72,7 @@ connect() {
 			mycli -h $host -u $user -p $password -P $port $db
 		;;
 		postgresql)
-			mycli -h $host -u $user -p $password -P $port $db
+			pgcli -h $host -u $user -W -p $port $db
 		;;
 	esac
 }
