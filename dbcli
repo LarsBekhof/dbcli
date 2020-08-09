@@ -1,0 +1,99 @@
+#!/bin/sh
+
+# Initials setup
+config_dir="$HOME/.config/dbcli"
+connections_dir="$config_dir/connections"
+
+if [ ! -d $config_dir ]; then
+	mkdir $config_dir
+fi
+
+if [ ! -d $connections_dir ]; then
+	mkdir $connections_dir
+fi
+
+create() {
+	read -p "Database type (mysql): " db_type
+	db_type=${db_type:-mysql}
+
+	read -p "Host (localhost): " host
+	host=${host:-localhost}
+
+	read -p "User (root): " user
+	user=${user:-root}
+
+	read -p "Password (root): " password
+	password=${password:-root}
+
+	case "$db_type" in
+		mysql)
+			read -p "Port (3306): " port
+			port=${port:-3306}
+		;;
+		postgresql)
+			read -p "Port (5432): " port
+			port=${port:-5432}
+		;;
+	esac
+
+	read -p "Database: " db
+
+	read -p "Connection name (user@host:port): " name
+	name=${name:-$user@$host:$port}
+
+	file="$connections_dir/$name"
+
+	touch $file
+	echo "db_type=$db_type" >> $file
+	echo "host=$host" >> $file
+	echo "user=$user" >> $file
+	echo "password=$password" >> $file
+	echo "port=$port" >> $file
+	echo "db=$db" >> $file
+
+	echo "Connection $name created!"
+}
+
+connect() {
+	if [ -z $1 ]; then
+		echo "A connection name must be specified."
+		exit 1
+	fi
+
+	if [ ! -f "$connections_dir/$1" ]; then
+		echo "A connection with the name $1 doesn't exists."
+		exit 1
+	fi
+
+	. $connections_dir/$1
+
+	case $db_type in
+		mysql)
+			mycli -h $host -u $user -p $password -P $port $db
+		;;
+		postgresql)
+			mycli -h $host -u $user -p $password -P $port $db
+		;;
+	esac
+}
+
+case "$1" in
+	create)
+		create
+	;;
+	connect)
+		connect $2
+	;;
+	remove)
+		rm $connections_dir/$2
+	;;
+	list)
+		ls $connections_dir
+	;;
+	show)
+		cat $connections_dir/$2
+	;;
+	*)
+		echo "You must either connect of create a connection."
+	;;
+esac
